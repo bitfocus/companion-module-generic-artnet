@@ -103,6 +103,13 @@ instance.prototype.config_fields = function () {
 	var self = this;
 	var fields = [
 		{
+			type: 'text',
+			id: 'info',
+			width: 12,
+			label: 'Information',
+			value: 'This module will transmit ArtNet packets to the ip and universe you specify below. If you need more universes, add multiple artnet instances.'
+		},
+		{
 			type: 'textinput',
 			id: 'host',
 			label: 'Receiver IP',
