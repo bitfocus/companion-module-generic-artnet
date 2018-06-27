@@ -32,7 +32,6 @@ setInterval(function () {
 
 	for (var key in discoveries) {
 		if (Date.now() > discoveries[key].ts + 10000) {
-			debug('Not seen ' + discoveries[key].name + ' for a while');
 			delete discoveries[key];
 		}
 	}
