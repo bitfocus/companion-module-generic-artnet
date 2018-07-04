@@ -1,7 +1,6 @@
 var artnet = require('artnet-node');
 var artnetClient = artnet.Client;
 var instance_skel = require('../../instance_skel');
-var debug;
 var log;
 
 var discoveries = {};
@@ -9,7 +8,6 @@ var discoveries = {};
 function discovery(err, data) {
 	if (!err && data) {
 
-		//debug('Artnet Discovery:', data);
 		if (data.length > 0) {
 			for (var i = 0; i < data.length; ++i) {
 
@@ -32,7 +30,6 @@ setInterval(function () {
 
 	for (var key in discoveries) {
 		if (Date.now() > discoveries[key].ts + 10000) {
-			debug('Not seen ' + discoveries[key].name + ' for a while');
 			delete discoveries[key];
 		}
 	}
@@ -98,7 +95,6 @@ instance.prototype.init_artnet= function() {
 
 // Return config fields for web config
 instance.prototype.config_fields = function () {
-	debug('config_fields');
 
 	var self = this;
 	var fields = [
@@ -159,7 +155,6 @@ instance.prototype.destroy = function() {
 		self.client.close();
 	}
 
-	debug("destroy", self.id);;
 };
 
 
@@ -199,7 +194,6 @@ instance.prototype.action = function(action) {
 	switch (action.action) {
 
 		case 'set':
-			console.log(action.options);
 			if (self.client !== undefined) {
 				self.data[action.options.channel] = action.options.value;
 
@@ -208,8 +202,6 @@ instance.prototype.action = function(action) {
 			break;
 
 	}
-
-	debug('action():', action);
 
 };
 
