@@ -39,7 +39,7 @@ function instance(system, id, config) {
 	var self = this;
 
 	self.data = [];
-	for (var i = 0; i < 510; ++i) {
+	for (var i = 0; i < 511; ++i) {
 		self.data[i] = 0;
 	}
 
@@ -167,17 +167,17 @@ instance.prototype.actions = function(system) {
 			options: [
 				{
 					 type: 'textinput',
-					 label: 'Channel (Range 1-511)',
+					 label: 'Channel (Range 1-512)',
 					 id: 'channel',
 					 default: '1',
-					 regex: '/^0*([1-9]|[1-8][0-9]|9[0-9]|[1-4][0-9]{2}|50[0-9]|51[01])$/' // 1-511
+					 regex: '/^0*([1-9]|[1-8][0-9]|9[0-9]|[1-4][0-9]{2}|50[0-9]|51[012])$/' // 1-512
 				},
 				{
 					 type: 'textinput',
 					 label: 'Value (Range 0-255)',
 					 id: 'value',
 					 default: '0',
-					 regex: '/^0*([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/' // 1-511
+					 regex: '/^0*([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/' // 0-255
 				}
 			]
 		}
@@ -195,8 +195,7 @@ instance.prototype.action = function(action) {
 
 		case 'set':
 			if (self.client !== undefined) {
-				self.data[action.options.channel] = action.options.value;
-
+				self.data[action.options.channel-1] = action.options.value;
 				self.client.send(self.data);
 			}
 			break;
@@ -208,7 +207,7 @@ instance.prototype.action = function(action) {
 instance.module_info = {
 	label: 'Artnet Sender',
 	id: 'artnet',
-	version: '0.0.1'
+	version: '0.0.2'
 };
 
 instance_skel.extendedBy(instance);
