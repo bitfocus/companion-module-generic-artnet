@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Håkon Nessjøen <haakon@bitfocus.io>",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "artnet-node": "haakonnessjoen/artnet-node#Discovery"
   }
