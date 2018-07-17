@@ -153,6 +153,16 @@ instance.prototype.destroy = function() {
 
 	if (self.client !== undefined) {
 		self.client.close();
+		delete self.client;
+	}
+
+	if (self.timer) {
+		clearInterval(self.timer);
+		self.timer = undefined;
+	}
+
+	if (self.client !== undefined) {
+		self.client.close();
 	}
 
 };
