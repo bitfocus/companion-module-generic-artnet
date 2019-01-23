@@ -2,6 +2,6 @@
 # yarn lockfile v1
 
 
-artnet-node@haakonnessjoen/artnet-node#Discovery:
+artnet-node@haakonnessjoen/artnet-node#ee6273d:
   version "0.1.2"
-  resolved "https://codeload.github.com/haakonnessjoen/artnet-node/tar.gz/a19a4aca1452aa777351beb66c2cb4cac020cd0f"
+  resolved "https://codeload.github.com/haakonnessjoen/artnet-node/tar.gz/ee6273d6b5e59365ac446089c1b59dc90da1a374"

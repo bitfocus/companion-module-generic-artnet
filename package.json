@@ -15,6 +15,6 @@
   "author": "Håkon Nessjøen <haakon@bitfocus.io>",
   "license": "MIT",
   "dependencies": {
-    "artnet-node": "haakonnessjoen/artnet-node#Discovery"
+    "artnet-node": "haakonnessjoen/artnet-node#ee6273d"
   }
 }
