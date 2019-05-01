@@ -1,6 +1,6 @@
 {
 	"name": "artnet",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"api_version": "1.0.0",
 	"description": "Artnet module for Companion",
 	"keywords": [
@@ -8,8 +8,8 @@
 		"Lighting",
 		"Generic"
 	],
-	"manufacturer": "Art-Net",
-	"product": "Sender",
+	"manufacturer": "Generic",
+	"product": "Generic Art-Net",
 	"shortname": "artnet",
 	"homepage": "https://art-net.org.uk/",
 	"main": "artnet.js",
