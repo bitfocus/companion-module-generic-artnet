@@ -9,7 +9,7 @@
 		"Generic"
 	],
 	"manufacturer": "Generic",
-	"product": "Generic Art-Net",
+	"product": "Art-Net",
 	"shortname": "artnet",
 	"homepage": "https://art-net.org.uk/",
 	"main": "artnet.js",
