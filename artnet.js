@@ -31,169 +31,155 @@ setInterval(function () {
 	}
 }, 5000)
 
-function instance(system, id, config) {
-	var self = this
+class instance extends instance_skel {
+	constructor(system, id, config) {
+		super(system, id, config)
 
-	self.data = []
-	for (var i = 0; i < 511; ++i) {
-		self.data[i] = 0
+		var self = this
+
+		self.data = []
+		for (var i = 0; i < 511; ++i) {
+			self.data[i] = 0
+		}
+
+		self.init_actions() // export actions
+
+		return self
 	}
 
-	// super-constructor
-	instance_skel.apply(this, arguments)
+	updateConfig(config) {
+		var self = this
 
-	self.actions() // export actions
+		self.config = config
 
-	return self
-}
+		self.init_artnet()
+	}
 
-instance.prototype.updateConfig = function (config) {
-	var self = this
+	init() {
+		var self = this
 
-	self.config = config
+		self.status(self.STATE_UNKNOWN)
 
-	self.init_artnet()
-}
+		self.init_artnet()
 
-instance.prototype.init = function () {
-	var self = this
+		self.send_timer = setInterval(function () {
+			if (self.client !== undefined) {
+				self.client.send(self.data)
+			}
+		}, 1000)
+	}
+	// When module gets deleted
+	destroy() {
+		var self = this
 
-	self.status(self.STATE_UNKNOWN)
-
-	self.init_artnet()
-
-	self.timer = setInterval(function () {
 		if (self.client !== undefined) {
-			self.client.send(self.data)
-		}
-	}, 1000)
-}
-
-instance.prototype.init_artnet = function () {
-	var self = this
-
-	self.status(self.STATE_UNKNOWN)
-	if (self.client !== undefined) {
-		self.client.close()
-		delete self.client
-	}
-
-	if (self.config.host_dd || self.config.host) {
-		self.client = new artnetClient(self.config.host_dd || self.config.host, 6454, self.config.universe || 0)
-
-		self.status(self.STATE_OK)
-	}
-}
-
-// Return config fields for web config
-instance.prototype.config_fields = function () {
-	var self = this
-	var fields = [
-		{
-			type: 'text',
-			id: 'info',
-			width: 12,
-			label: 'Information',
-			value:
-				'This module will transmit ArtNet packets to the ip and universe you specify below. If you need more universes, add multiple artnet instances.',
-		},
-		{
-			type: 'textinput',
-			id: 'host',
-			label: 'Receiver IP',
-			width: 6,
-			regex: self.REGEX_IP,
-		},
-	]
-
-	if (Object.keys(discoveries).length > 0 || self.config.host_dd) {
-		var choices = [{ id: '', label: 'Custom ip' }]
-
-		if (self.config.host_dd && discoveries[self.config.host_dd] === undefined) {
-			choices.push({ id: self.config.host_dd, label: self.config.host_dd + ' (not seen for a while)' })
+			self.client.close()
+			delete self.client
 		}
 
-		for (var key in discoveries) {
-			choices.push({ id: key, label: discoveries[key].name + ' (' + key + ')' })
+		if (self.send_timer) {
+			clearInterval(self.send_timer)
+			self.send_timer = undefined
+		}
+	}
+
+	init_artnet() {
+		this.status(this.STATE_UNKNOWN)
+
+		// Close current client
+		if (this.client !== undefined) {
+			this.client.close()
+			delete this.client
+		}
+
+		if (this.config.host_dd || this.config.host) {
+			this.client = new artnetClient(this.config.host_dd || this.config.host, 6454, this.config.universe || 0)
+
+			this.status(this.STATE_OK)
+		}
+	}
+	// Return config fields for web config
+	config_fields() {
+		var fields = [
+			{
+				type: 'text',
+				id: 'info',
+				width: 12,
+				label: 'Information',
+				value:
+					'This module will transmit ArtNet packets to the ip and universe you specify below. If you need more universes, add multiple artnet instances.',
+			},
+			{
+				type: 'textinput',
+				id: 'host',
+				label: 'Receiver IP',
+				width: 6,
+				regex: this.REGEX_IP,
+			},
+		]
+
+		if (Object.keys(discoveries).length > 0 || self.config.host_dd) {
+			var choices = [{ id: '', label: 'Custom ip' }]
+
+			if (self.config.host_dd && discoveries[self.config.host_dd] === undefined) {
+				choices.push({ id: self.config.host_dd, label: self.config.host_dd + ' (not seen for a while)' })
+			}
+
+			for (var key in discoveries) {
+				choices.push({ id: key, label: discoveries[key].name + ' (' + key + ')' })
+			}
+
+			fields.push({
+				type: 'dropdown',
+				id: 'host_dd',
+				label: 'Or choose from discovered receivers:',
+				width: 6,
+				default: '',
+				choices: choices,
+			})
 		}
 
 		fields.push({
-			type: 'dropdown',
-			id: 'host_dd',
-			label: 'Or choose from discovered receivers:',
+			type: 'textinput',
+			id: 'universe',
+			label: 'Universe number (0-63)',
 			width: 6,
-			default: '',
-			choices: choices,
+			default: 0,
+			regex: '/^0*([0-9]|[1-5][0-9]|6[0-3])$/',
+		})
+
+		return fields
+	}
+
+	init_actions() {
+		this.setActions({
+			set: {
+				label: 'Set value',
+				options: [
+					{
+						type: 'textinput',
+						label: 'Channel (Range 1-512)',
+						id: 'channel',
+						default: '1',
+						regex: '/^0*([1-9]|[1-8][0-9]|9[0-9]|[1-4][0-9]{2}|50[0-9]|51[012])$/', // 1-512
+					},
+					{
+						type: 'textinput',
+						label: 'Value (Range 0-255)',
+						id: 'value',
+						default: '0',
+						regex: '/^0*([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', // 0-255
+					},
+				],
+				callback: (action) => {
+					if (this.client !== undefined) {
+						this.data[action.options.channel - 1] = action.options.value
+						this.client.send(this.data)
+					}
+				},
+			},
 		})
 	}
-
-	fields.push({
-		type: 'textinput',
-		id: 'universe',
-		label: 'Universe number (0-63)',
-		width: 6,
-		default: 0,
-		regex: '/^0*([0-9]|[1-5][0-9]|6[0-3])$/',
-	})
-
-	return fields
 }
 
-// When module gets deleted
-instance.prototype.destroy = function () {
-	var self = this
-
-	if (self.client !== undefined) {
-		self.client.close()
-		delete self.client
-	}
-
-	if (self.timer) {
-		clearInterval(self.timer)
-		self.timer = undefined
-	}
-}
-
-instance.prototype.actions = function (system) {
-	var self = this
-	self.system.emit('instance_actions', self.id, {
-		set: {
-			label: 'Set value',
-			options: [
-				{
-					type: 'textinput',
-					label: 'Channel (Range 1-512)',
-					id: 'channel',
-					default: '1',
-					regex: '/^0*([1-9]|[1-8][0-9]|9[0-9]|[1-4][0-9]{2}|50[0-9]|51[012])$/', // 1-512
-				},
-				{
-					type: 'textinput',
-					label: 'Value (Range 0-255)',
-					id: 'value',
-					default: '0',
-					regex: '/^0*([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', // 0-255
-				},
-			],
-		},
-	})
-}
-
-instance.prototype.action = function (action) {
-	var self = this
-	var id = action.action
-
-	var cmd
-
-	switch (action.action) {
-		case 'set':
-			if (self.client !== undefined) {
-				self.data[action.options.channel - 1] = action.options.value
-				self.client.send(self.data)
-			}
-			break
-	}
-}
-
-instance_skel.extendedBy(instance)
 exports = module.exports = instance
