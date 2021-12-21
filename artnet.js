@@ -35,51 +35,41 @@ class instance extends instance_skel {
 	constructor(system, id, config) {
 		super(system, id, config)
 
-		var self = this
-
-		self.data = []
+		this.data = []
 		for (var i = 0; i < 511; ++i) {
-			self.data[i] = 0
+			this.data[i] = 0
 		}
 
-		self.init_actions() // export actions
-
-		return self
+		this.init_actions()
 	}
 
 	updateConfig(config) {
-		var self = this
+		this.config = config
 
-		self.config = config
-
-		self.init_artnet()
+		this.init_artnet()
 	}
 
 	init() {
-		var self = this
+		this.status(this.STATE_UNKNOWN)
 
-		self.status(self.STATE_UNKNOWN)
+		this.init_artnet()
 
-		self.init_artnet()
-
-		self.send_timer = setInterval(function () {
-			if (self.client !== undefined) {
-				self.client.send(self.data)
+		this.send_timer = setInterval(() => {
+			if (this.client !== undefined) {
+				this.client.send(this.data)
 			}
 		}, 1000)
 	}
 	// When module gets deleted
 	destroy() {
-		var self = this
-
-		if (self.client !== undefined) {
-			self.client.close()
-			delete self.client
+		if (this.client !== undefined) {
+			this.client.close()
+			delete this.client
 		}
 
-		if (self.send_timer) {
-			clearInterval(self.send_timer)
-			self.send_timer = undefined
+		if (this.send_timer) {
+			clearInterval(this.send_timer)
+			this.send_timer = undefined
 		}
 	}
 
@@ -118,11 +108,11 @@ class instance extends instance_skel {
 			},
 		]
 
-		if (Object.keys(discoveries).length > 0 || self.config.host_dd) {
+		if (Object.keys(discoveries).length > 0 || this.config.host_dd) {
 			var choices = [{ id: '', label: 'Custom ip' }]
 
-			if (self.config.host_dd && discoveries[self.config.host_dd] === undefined) {
-				choices.push({ id: self.config.host_dd, label: self.config.host_dd + ' (not seen for a while)' })
+			if (this.config.host_dd && discoveries[this.config.host_dd] === undefined) {
+				choices.push({ id: this.config.host_dd, label: this.config.host_dd + ' (not seen for a while)' })
 			}
 
 			for (var key in discoveries) {
