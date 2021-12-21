@@ -1,8 +1,13 @@
-var artnet = require('artnet-node')
-var artnetClient = artnet.Client
-var instance_skel = require('../../instance_skel')
+const artnet = require('artnet-node')
+const artnetClient = artnet.Client
+const instance_skel = require('../../instance_skel')
+const { upgradeCombineHostConfigs } = require('./upgrade')
 
 var discoveries = {}
+
+const MAX_UNIVERSE = (1 << 15) - 1 // 15bit int
+const MAX_CHANNEL = 512
+const MAX_VALUE = 255
 
 function discovery(err, data) {
 	if (!err && data) {
@@ -24,6 +29,9 @@ setInterval(function () {
 	artnet.Server.discover(discovery, 5000, '10.255.255.255')
 	artnet.Server.discover(discovery, 5000, '2.255.255.255')
 
+	// HACK
+	discoveries['10.42.13.197'] = { name: 'HACK local test', ts: Date.now() }
+
 	for (var key in discoveries) {
 		if (Date.now() > discoveries[key].ts + 10000) {
 			delete discoveries[key]
@@ -41,6 +49,10 @@ class instance extends instance_skel {
 		}
 
 		this.init_actions()
+	}
+
+	static GetUpgradeScripts() {
+		return [upgradeCombineHostConfigs]
 	}
 
 	updateConfig(config) {
@@ -82,15 +94,17 @@ class instance extends instance_skel {
 			delete this.client
 		}
 
-		if (this.config.host_dd || this.config.host) {
-			this.client = new artnetClient(this.config.host_dd || this.config.host, 6454, this.config.universe || 0)
+		if (this.config.host) {
+			this.client = new artnetClient(this.config.host, 6454, this.config.universe || 0)
 
 			this.status(this.STATE_OK)
+		} else {
+			this.status(this.STATUS_ERROR, 'Missing host')
 		}
 	}
 	// Return config fields for web config
 	config_fields() {
-		var fields = [
+		return [
 			{
 				type: 'text',
 				id: 'info',
@@ -100,45 +114,29 @@ class instance extends instance_skel {
 					'This module will transmit ArtNet packets to the ip and universe you specify below. If you need more universes, add multiple artnet instances.',
 			},
 			{
-				type: 'textinput',
+				type: 'dropdown',
 				id: 'host',
 				label: 'Receiver IP',
 				width: 6,
+				choices: Object.entries(discoveries).map(([id, d]) => ({
+					id: id,
+					label: `${d.name} (${id})`,
+				})),
+				default: '',
+				allowCustom: true,
 				regex: this.REGEX_IP,
 			},
-		]
-
-		if (Object.keys(discoveries).length > 0 || this.config.host_dd) {
-			var choices = [{ id: '', label: 'Custom ip' }]
-
-			if (this.config.host_dd && discoveries[this.config.host_dd] === undefined) {
-				choices.push({ id: this.config.host_dd, label: this.config.host_dd + ' (not seen for a while)' })
-			}
-
-			for (var key in discoveries) {
-				choices.push({ id: key, label: discoveries[key].name + ' (' + key + ')' })
-			}
-
-			fields.push({
-				type: 'dropdown',
-				id: 'host_dd',
-				label: 'Or choose from discovered receivers:',
+			{
+				type: 'number',
+				id: 'universe',
+				label: `Universe number (0-${MAX_UNIVERSE})`,
 				width: 6,
-				default: '',
-				choices: choices,
-			})
-		}
-
-		fields.push({
-			type: 'textinput',
-			id: 'universe',
-			label: 'Universe number (0-63)',
-			width: 6,
-			default: 0,
-			regex: '/^0*([0-9]|[1-5][0-9]|6[0-3])$/',
-		})
-
-		return fields
+				default: 0,
+				min: 0,
+				max: MAX_UNIVERSE,
+				step: 1,
+			},
+		]
 	}
 
 	init_actions() {
@@ -147,23 +145,28 @@ class instance extends instance_skel {
 				label: 'Set value',
 				options: [
 					{
-						type: 'textinput',
-						label: 'Channel (Range 1-512)',
+						type: 'number',
+						label: `Channel (Range 1-${MAX_CHANNEL})`,
 						id: 'channel',
-						default: '1',
-						regex: '/^0*([1-9]|[1-8][0-9]|9[0-9]|[1-4][0-9]{2}|50[0-9]|51[012])$/', // 1-512
+						default: 1,
+						min: 1,
+						max: MAX_CHANNEL,
+						step: 1,
 					},
 					{
-						type: 'textinput',
-						label: 'Value (Range 0-255)',
+						type: 'number',
+						label: `Value (Range 0-${MAX_VALUE})`,
 						id: 'value',
-						default: '0',
-						regex: '/^0*([0-9]|[1-8][0-9]|9[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/', // 0-255
+						default: 0,
+						min: 0,
+						max: MAX_VALUE,
+						step: 1,
 					},
 				],
 				callback: (action) => {
 					if (this.client !== undefined) {
-						this.data[action.options.channel - 1] = action.options.value
+						const val = Number(action.options.value)
+						this.data[action.options.channel - 1] = isNaN(val) ? 0 : val
 						this.client.send(this.data)
 					}
 				},
