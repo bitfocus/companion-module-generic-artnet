@@ -1,7 +1,6 @@
 var artnet = require('artnet-node')
 var artnetClient = artnet.Client
 var instance_skel = require('../../instance_skel')
-var log
 
 var discoveries = {}
 
@@ -22,8 +21,8 @@ function discovery(err, data) {
 
 // Check every 5 seconds for artnet hosts
 setInterval(function () {
-	var discovery10 = artnet.Server.discover(discovery, 5000, '10.255.255.255')
-	var discovery2 = artnet.Server.discover(discovery, 5000, '2.255.255.255')
+	artnet.Server.discover(discovery, 5000, '10.255.255.255')
+	artnet.Server.discover(discovery, 5000, '2.255.255.255')
 
 	for (var key in discoveries) {
 		if (Date.now() > discoveries[key].ts + 10000) {
@@ -58,9 +57,6 @@ instance.prototype.updateConfig = function (config) {
 
 instance.prototype.init = function () {
 	var self = this
-
-	debug = self.debug
-	log = self.log
 
 	self.status(self.STATE_UNKNOWN)
 
@@ -155,10 +151,6 @@ instance.prototype.destroy = function () {
 	if (self.timer) {
 		clearInterval(self.timer)
 		self.timer = undefined
-	}
-
-	if (self.client !== undefined) {
-		self.client.close()
 	}
 }
 
