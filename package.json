@@ -14,7 +14,7 @@
 	"manufacturer": "Generic",
 	"product": "Art-Net",
 	"shortname": "artnet",
-	"homepage": "https://art-net.org.uk/",
+	"homepage": "https://github.com/bitfocus/companion-module-generic-artnet#readme",
 	"main": "lib/main.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
@@ -23,5 +23,12 @@
 	"license": "MIT",
 	"dependencies": {
 		"artnet-node": "haakonnessjoen/artnet-node#ee6273d"
+	},
+	"bugs": {
+		"url": "https://github.com/bitfocus/companion-module-generic-artnet/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-generic-artnet.git"
 	}
 }
