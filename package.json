@@ -1,34 +1,20 @@
 {
 	"name": "generic-artnet",
-	"legacy": [
-		"artnet"
-	],
-	"version": "1.2.1",
-	"api_version": "1.0.0",
-	"description": "Artnet module for Companion",
-	"keywords": [
-		"Protocol",
-		"Lighting",
-		"Generic"
-	],
-	"manufacturer": "Generic",
-	"product": "Art-Net",
-	"shortname": "artnet",
-	"homepage": "https://github.com/bitfocus/companion-module-generic-artnet#readme",
+	"version": "2.0.0",
 	"main": "lib/main.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Håkon Nessjøen <haakon@bitfocus.io>",
 	"license": "MIT",
 	"dependencies": {
+		"@companion-module/base": "~1.0.1",
 		"artnet-node": "haakonnessjoen/artnet-node#ee6273d"
-	},
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-generic-artnet/issues"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-generic-artnet.git"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^0.5.1"
 	}
 }
