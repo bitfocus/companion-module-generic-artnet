@@ -7,7 +7,7 @@
 	},
 	"license": "MIT",
 	"dependencies": {
-		"@companion-module/base": "~1.0.1",
+		"@companion-module/base": "~1.0.2",
 		"artnet-node": "haakonnessjoen/artnet-node#ee6273d"
 	},
 	"repository": {
