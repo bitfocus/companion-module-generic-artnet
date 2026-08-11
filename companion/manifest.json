@@ -14,11 +14,18 @@
 		}
 	],
 	"legacyIds": ["artnet"],
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
 	"runtime": {
-		"type": "node18",
+		"type": "node22",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
 		"entrypoint": "../lib/main.js"
+	},
+	"compatibility": {
+		"companion": {
+			"minVersion": "4.3.0"
+		}
 	},
 	"manufacturer": "Generic",
 	"products": ["Art-Net"],
