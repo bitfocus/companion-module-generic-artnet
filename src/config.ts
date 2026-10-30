@@ -1,7 +1,7 @@
 import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
 import { MAX_UNIVERSE, TIMER_SLOW_DEFAULT, TIMER_FAST_DEFAULT } from './constants.js'
 
-export interface ModuleConfig {
+export type ModuleConfig = {
 	host: string
 	universe: number
 	timer_slow: number

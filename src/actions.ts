@@ -1,14 +1,34 @@
-import type { CompanionActionDefinitions, InputValue } from '@companion-module/base'
-import type { ModuleInstance } from './main.js'
+import type { CompanionActionDefinitions, JsonValue } from '@companion-module/base'
+import type ModuleInstance from './main.js'
 import { MAX_CHANNEL, MAX_VALUE } from './constants.js'
 
+type ValueOptions = {
+	channel: number
+	value: number
+	duration: number
+}
+
+type TextValueOptions = {
+	channel: string
+	value: string
+	duration: string
+}
+
+export type ActionsSchema = {
+	set: { options: ValueOptions }
+	set_customvariable: { options: TextValueOptions }
+	set_complex: { options: { params: string; duration: string } }
+	offset: { options: ValueOptions }
+	offset_customvariable: { options: TextValueOptions }
+}
+
 /** Convert an option value to a number, falling back to 0 when it is not a valid number */
-function toNumber(value: InputValue | undefined): number {
+function toNumber(value: JsonValue | undefined): number {
 	const num = Number(value)
 	return isNaN(num) ? 0 : num
 }
 
-export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefinitions {
+export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefinitions<ActionsSchema> {
 	return {
 		set: {
 			name: 'Set Value',

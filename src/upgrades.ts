@@ -6,15 +6,15 @@ import type {
 } from '@companion-module/base'
 import type { ModuleConfig } from './config.js'
 
-interface LegacyModuleConfig extends ModuleConfig {
+type LegacyModuleConfig = ModuleConfig & {
 	host_dd?: string
 }
 
 function upgradeCombineHostConfigs(
 	_context: CompanionUpgradeContext<LegacyModuleConfig>,
-	props: CompanionStaticUpgradeProps<LegacyModuleConfig>,
-): CompanionStaticUpgradeResult<LegacyModuleConfig> {
-	const res: CompanionStaticUpgradeResult<LegacyModuleConfig> = {
+	props: CompanionStaticUpgradeProps<LegacyModuleConfig, undefined>,
+): CompanionStaticUpgradeResult<LegacyModuleConfig, undefined> {
+	const res: CompanionStaticUpgradeResult<LegacyModuleConfig, undefined> = {
 		updatedConfig: null,
 		updatedActions: [],
 		updatedFeedbacks: [],
