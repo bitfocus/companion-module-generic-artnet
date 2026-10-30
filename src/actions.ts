@@ -40,6 +40,55 @@ const durationField: CompanionInputFieldNumber<'duration'> = {
 	clampValues: true,
 }
 
+interface ChannelValue {
+	/** 0-based channel index */
+	channel: number
+	value: number
+}
+
+/**
+ * Parse a channel number or range, eg `5` or `1-20`
+ * @returns the 0-based channel indices, or null if invalid
+ */
+function parseChannelSpec(spec: string): number[] | null {
+	const match = /^(\d+)(?:\s*-\s*(\d+))?$/.exec(spec.trim())
+	if (!match) return null
+
+	const start = Number(match[1])
+	const end = match[2] === undefined ? start : Number(match[2])
+	if (start < 1 || end > MAX_CHANNEL || end < start) return null
+
+	const channels: number[] = []
+	for (let ch = start; ch <= end; ch++) channels.push(ch - 1)
+	return channels
+}
+
+/**
+ * Parse groups of `channel,value` separated by semicolons. The channel can be a range, eg `1-20,127`
+ * @returns the values to set, or an error describing the first invalid group
+ */
+function parseComplexParams(str: string): { values: ChannelValue[] } | { error: string } {
+	const values: ChannelValue[] = []
+
+	for (const rawGroup of str.split(';')) {
+		const group = rawGroup.trim()
+		if (group === '') continue // Allow trailing or doubled up separators
+
+		const [channelSpec, valueStr] = group.split(',')
+		if (valueStr === undefined) return { error: `Missing value in "${group}"` }
+
+		const channels = parseChannelSpec(channelSpec)
+		if (!channels) return { error: `Invalid channel "${channelSpec.trim()}" in "${group}"` }
+
+		const value = Number(valueStr.trim())
+		if (valueStr.trim() === '' || !Number.isFinite(value)) return { error: `Invalid value in "${group}"` }
+
+		for (const channel of channels) values.push({ channel, value })
+	}
+
+	return { values }
+}
+
 /**
  * Parse a list of values, separated by commas
  * @returns the values, or null if any of them are not a finite number
@@ -88,6 +137,7 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 					label: `Channel (Range 1-${MAX_CHANNEL}), Value (Range 0-${MAX_VALUE});`,
 					tooltip:
 						'Each parameter should be separated by a comma (,) and each group of parameters should be separated by a semicolon (;)',
+					description: 'Use a range to set multiple channels to the same value, eg 1-20,127;30,255;',
 					id: 'params',
 					default: '1,0;',
 					useVariables: true,
@@ -96,25 +146,15 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 			],
 			callback: (action) => {
 				// Variables in this textinput field are parsed by Companion before the callback is called
-				const params = String(action.options.params ?? '').replace(/;+\s*$/, '') //remove any trailing ';' as they are not needed
+				const result = parseComplexParams(String(action.options.params ?? ''))
+				if ('error' in result) {
+					self.log('error', `Invalid parameters in the "Set Complex Value" action: ${result.error}`)
+					return
+				}
+
 				const duration = toNumber(action.options.duration)
-
-				const params_groups = params.split(';')
-
-				for (const group of params_groups) {
-					if (group.indexOf(',') === -1) {
-						self.log(
-							'error',
-							'One or more of your parameters are set incorrectly in the "Set Complex Value" action: ' + group,
-						)
-						return
-					}
-
-					const params_values = group.split(',')
-
-					const channel = Number(params_values[0])
-
-					self.transitions.run(channel - 1, toNumber(params_values[1]), duration)
+				for (const { channel, value } of result.values) {
+					self.transitions.run(channel, value, duration)
 				}
 			},
 		},

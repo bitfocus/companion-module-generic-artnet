@@ -10,7 +10,7 @@ The Receiver IP can be either:
 ### Actions
 
 - Set Value: Set a channel in the universe to the specified value
-- Set Complex Value: Set multiple channels in the universe to their specified values, written as `channel,value;channel,value;`
+- Set Complex Value: Set multiple channels in the universe to their specified values, written as `channel,value;channel,value;`. A range of channels can be set to the same value, eg `1-20,127;`
 - Set Consecutive Values: Set a run of channels starting from a start channel, written as `value,value,value`. Useful for fixtures which use multiple channels, as only the start channel needs changing
 - Offset Value: Offset a value by a set amount
 
