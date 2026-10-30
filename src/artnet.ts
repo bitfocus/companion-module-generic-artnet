@@ -1,12 +1,14 @@
-const dgram = require('dgram')
+import dgram from 'node:dgram'
 
-const ARTNET_PORT = 6454 // 0x1936
+export const ARTNET_PORT = 6454 // 0x1936
 const ARTNET_ID = Buffer.from('Art-Net\0', 'ascii')
 const OP_DMX = 0x5000 // ArtDmx (aka OpOutput)
 const PROTOCOL_VERSION = 14
 
 const DMX_HEADER_LENGTH = 18
 const DMX_MAX_CHANNELS = 512
+
+export type ArtNetStatusCallback = (err: Error | null) => void
 
 /**
  * A minimal Art-Net transmitter, sending ArtDmx packets for a single universe to a single address.
@@ -16,21 +18,21 @@ const DMX_MAX_CHANNELS = 512
  *  - a broadcast address, such as 2.255.255.255, 10.255.255.255, a directed subnet broadcast (eg 192.168.1.255)
  *    or 255.255.255.255 (the Art-Net I style of transmission)
  */
-class ArtNetClient {
-	#host
-	#port
-	#universe
-	#socket
+export class ArtNetClient {
+	readonly #host: string
+	readonly #port: number
+	readonly #universe: number
+	readonly #socket: dgram.Socket
 	#sequence = 0
-	#onStatus
+	readonly #onStatus: ArtNetStatusCallback | undefined
 
 	/**
-	 * @param {string} host Target ip address (unicast or broadcast)
-	 * @param {number} universe 15bit Port-Address (Net + Sub-Net + Universe)
-	 * @param {(err: Error | null) => void} [onStatus] Called with an error when something fails, or null after each successful send
-	 * @param {number} [port]
+	 * @param host Target ip address (unicast or broadcast)
+	 * @param universe 15bit Port-Address (Net + Sub-Net + Universe)
+	 * @param onStatus Called with an error when something fails, or null after each successful send
+	 * @param port
 	 */
-	constructor(host, universe, onStatus, port = ARTNET_PORT) {
+	constructor(host: string, universe: number, onStatus?: ArtNetStatusCallback, port = ARTNET_PORT) {
 		this.#host = host
 		this.#port = port
 		this.#universe = universe & 0x7fff
@@ -44,21 +46,20 @@ class ArtNetClient {
 			try {
 				this.#socket.setBroadcast(true)
 			} catch (e) {
-				this.#reportError(e)
+				this.#reportError(e instanceof Error ? e : new Error(String(e)))
 			}
 		})
 	}
 
-	#reportError(err) {
+	#reportError(err: Error): void {
 		if (this.#onStatus) this.#onStatus(err)
 	}
 
 	/**
 	 * Build an ArtDmx packet
-	 * @param {ArrayLike<number>} data channel values
-	 * @returns {Buffer}
+	 * @param data channel values
 	 */
-	buildDmxPacket(data) {
+	buildDmxPacket(data: ArrayLike<number>): Buffer {
 		// Length must be even, and in the range 2-512
 		let length = Math.min(data.length, DMX_MAX_CHANNELS)
 		if (length % 2 === 1) length++
@@ -87,25 +88,20 @@ class ArtNetClient {
 
 	/**
 	 * Send a frame of dmx data
-	 * @param {ArrayLike<number>} data channel values
+	 * @param data channel values
 	 */
-	send(data) {
+	send(data: ArrayLike<number>): void {
 		const buf = this.buildDmxPacket(data)
 		this.#socket.send(buf, this.#port, this.#host, (err) => {
 			if (this.#onStatus) this.#onStatus(err || null)
 		})
 	}
 
-	close() {
+	close(): void {
 		try {
 			this.#socket.close()
 		} catch (_e) {
 			// Ignore
 		}
 	}
-}
-
-module.exports = {
-	ArtNetClient,
-	ARTNET_PORT,
 }
