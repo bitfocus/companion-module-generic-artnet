@@ -1,6 +1,7 @@
 import type { CompanionFeedbackDefinitions } from '@companion-module/base'
 import type ModuleInstance from './main.js'
 import { MAX_CHANNEL } from './constants.js'
+import { toDmxValue } from './artnet.js'
 
 export type FeedbacksSchema = {
 	channel_value: {
@@ -30,8 +31,8 @@ export function GetFeedbackDefinitions(self: ModuleInstance): CompanionFeedbackD
 			],
 			callback: (feedback) => {
 				const value = self.data[feedback.options.channel - 1]
-				// Report the value as it is sent, which is rounded during fades
-				return value === undefined ? null : Math.round(value)
+				// Report the value as it is sent
+				return value === undefined ? null : toDmxValue(value)
 			},
 		},
 	}

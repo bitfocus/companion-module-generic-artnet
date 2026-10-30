@@ -41,13 +41,13 @@ const durationField: CompanionInputFieldNumber<'duration'> = {
 
 /**
  * Parse a list of values, separated by commas
- * @returns the values, or null if any of them are not a number
+ * @returns the values, or null if any of them are not a finite number
  */
 function parseValueList(str: string): number[] | null {
 	const values: number[] = []
 	for (const part of str.replace(/,+\s*$/, '').split(',')) {
 		const value = Number(part.trim())
-		if (part.trim() === '' || isNaN(value)) return null
+		if (part.trim() === '' || !Number.isFinite(value)) return null
 		values.push(value)
 	}
 	return values

@@ -1,3 +1,5 @@
+import { MAX_VALUE } from './constants.js'
+
 interface TransitionInfo {
 	steps: number[]
 }
@@ -61,6 +63,14 @@ export class Transitions {
 			// Not a valid channel, so ignore
 			return
 		}
+		if (!Number.isFinite(to)) {
+			// Not a valid value, so ignore
+			return
+		}
+
+		// Clamp to the range that can be sent, so that fades run over the whole duration
+		to = Math.max(0, Math.min(MAX_VALUE, to))
+		if (!Number.isFinite(duration)) duration = 0
 
 		const stepCount = Math.ceil(duration / this.#tickMs)
 

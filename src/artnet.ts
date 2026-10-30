@@ -8,6 +8,14 @@ const PROTOCOL_VERSION = 14
 const DMX_HEADER_LENGTH = 18
 const DMX_MAX_CHANNELS = 512
 
+/**
+ * Convert a value to the dmx value that will be sent for it
+ */
+export function toDmxValue(value: unknown): number {
+	const num = Math.round(Number(value) || 0)
+	return Math.max(0, Math.min(255, num))
+}
+
 export type ArtNetStatusCallback = (err: Error | null) => void
 
 /**
@@ -79,8 +87,7 @@ export class ArtNetClient {
 
 		const count = Math.min(data.length, length)
 		for (let i = 0; i < count; i++) {
-			const value = Math.round(Number(data[i]) || 0)
-			buf[DMX_HEADER_LENGTH + i] = Math.max(0, Math.min(255, value))
+			buf[DMX_HEADER_LENGTH + i] = toDmxValue(data[i])
 		}
 
 		return buf
