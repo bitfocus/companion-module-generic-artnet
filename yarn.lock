@@ -358,10 +358,6 @@ ajv@^8.0.0, ajv@^8.12.0, ajv@^8.20.0:
     json-schema-traverse "^1.0.0"
     require-from-string "^2.0.2"
 
-artnet-node@haakonnessjoen/artnet-node#ee6273d:
-  version "0.1.2"
-  resolved "https://codeload.github.com/haakonnessjoen/artnet-node/tar.gz/ee6273d6b5e59365ac446089c1b59dc90da1a374"
-
 author-regex@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/author-regex/-/author-regex-1.0.0.tgz#d08885be6b9bbf9439fe087c76287245f0a81450"
