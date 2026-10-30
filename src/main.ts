@@ -1,12 +1,22 @@
-import { InstanceBase, runEntrypoint, InstanceStatus, type SomeCompanionConfigField } from '@companion-module/base'
+import { InstanceBase, InstanceStatus, type SomeCompanionConfigField } from '@companion-module/base'
 import { ArtNetClient } from './artnet.js'
 import { UpgradeScripts } from './upgrades.js'
 import { Transitions } from './transitions.js'
 import { MAX_CHANNEL, TIMER_SLOW_DEFAULT, TIMER_FAST_DEFAULT } from './constants.js'
-import { GetActionDefinitions } from './actions.js'
+import { GetActionDefinitions, type ActionsSchema } from './actions.js'
 import { GetConfigFields, type ModuleConfig } from './config.js'
 
-export class ModuleInstance extends InstanceBase<ModuleConfig> {
+export type ModuleSchema = {
+	config: ModuleConfig
+	secrets: undefined
+	actions: ActionsSchema
+	feedbacks: Record<string, never>
+	variables: Record<string, never>
+}
+
+export { UpgradeScripts }
+
+export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 	config!: ModuleConfig // Setup in init()
 
 	readonly data: number[] = new Array<number>(MAX_CHANNEL).fill(0)
@@ -101,5 +111,3 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		return GetConfigFields()
 	}
 }
-
-runEntrypoint(ModuleInstance, UpgradeScripts)

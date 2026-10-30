@@ -1,5 +1,6 @@
 {
 	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
 	"id": "generic-artnet",
 	"name": "generic-artnet",
 	"shortname": "artnet",
@@ -16,7 +17,7 @@
 	],
 	"legacyIds": ["artnet"],
 	"runtime": {
-		"type": "node22",
+		"type": "node26",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
 		"entrypoint": "../dist/main.js"
