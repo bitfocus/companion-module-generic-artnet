@@ -3,17 +3,21 @@
 	"version": "2.0.1",
 	"main": "lib/main.js",
 	"scripts": {
+		"package": "companion-module-build",
 		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"engines": {
+		"node": "^22.20"
 	},
 	"license": "MIT",
 	"dependencies": {
-		"@companion-module/base": "~1.4.3"
+		"@companion-module/base": "~1.14.1"
 	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-generic-artnet.git"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.8.0"
+		"@companion-module/tools": "^2.9.0"
 	}
 }
