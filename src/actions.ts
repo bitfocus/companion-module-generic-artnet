@@ -1,31 +1,56 @@
-import type { CompanionActionDefinitions, JsonValue } from '@companion-module/base'
+import type { CompanionActionDefinitions, CompanionInputFieldNumber } from '@companion-module/base'
 import type ModuleInstance from './main.js'
 import { MAX_CHANNEL, MAX_VALUE } from './constants.js'
 
-type ValueOptions = {
-	channel: number
-	value: number
-	duration: number
-}
-
-type TextValueOptions = {
-	channel: string
-	value: string
-	duration: string
-}
-
 export type ActionsSchema = {
-	set: { options: ValueOptions }
-	set_customvariable: { options: TextValueOptions }
-	set_complex: { options: { params: string; duration: string } }
-	offset: { options: ValueOptions }
-	offset_customvariable: { options: TextValueOptions }
+	set: { options: { channel: number; value: number; duration: number } }
+	set_complex: { options: { params: string; duration: number } }
+	set_consecutive: { options: { start: number; values: string; duration: number } }
+	offset: { options: { channel: number; value: number; duration: number } }
 }
 
-/** Convert an option value to a number, falling back to 0 when it is not a valid number */
-function toNumber(value: JsonValue | undefined): number {
+/** Convert a value to a number, falling back to 0 when it is not a valid number */
+function toNumber(value: unknown): number {
 	const num = Number(value)
 	return isNaN(num) ? 0 : num
+}
+
+function channelField<TKey extends string>(id: TKey, label: string): CompanionInputFieldNumber<TKey> {
+	return {
+		type: 'number',
+		label: `${label} (Range 1-${MAX_CHANNEL})`,
+		id,
+		default: 1,
+		min: 1,
+		max: MAX_CHANNEL,
+		step: 1,
+		asInteger: true,
+	}
+}
+
+const durationField: CompanionInputFieldNumber<'duration'> = {
+	type: 'number',
+	label: `Fade time (ms)`,
+	id: 'duration',
+	default: 0,
+	min: 0,
+	max: Number.MAX_SAFE_INTEGER,
+	step: 1,
+	clampValues: true,
+}
+
+/**
+ * Parse a list of values, separated by commas
+ * @returns the values, or null if any of them are not a number
+ */
+function parseValueList(str: string): number[] | null {
+	const values: number[] = []
+	for (const part of str.replace(/,+\s*$/, '').split(',')) {
+		const value = Number(part.trim())
+		if (part.trim() === '' || isNaN(value)) return null
+		values.push(value)
+	}
+	return values
 }
 
 export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefinitions<ActionsSchema> {
@@ -33,15 +58,7 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 		set: {
 			name: 'Set Value',
 			options: [
-				{
-					type: 'number',
-					label: `Channel (Range 1-${MAX_CHANNEL})`,
-					id: 'channel',
-					default: 1,
-					min: 1,
-					max: MAX_CHANNEL,
-					step: 1,
-				},
+				channelField('channel', 'Channel'),
 				{
 					type: 'number',
 					label: `Value (Range 0-${MAX_VALUE})`,
@@ -50,54 +67,13 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 					min: 0,
 					max: MAX_VALUE,
 					step: 1,
+					clampValues: true,
 				},
-				{
-					type: 'number',
-					label: `Fade time (ms)`,
-					id: 'duration',
-					default: 0,
-					min: 0,
-					max: Number.MAX_SAFE_INTEGER,
-					step: 1,
-				},
+				durationField,
 			],
 			callback: (action) => {
 				self.transitions.run(
-					Number(action.options.channel) - 1,
-					toNumber(action.options.value),
-					toNumber(action.options.duration),
-				)
-			},
-		},
-		set_customvariable: {
-			name: 'Set Value by Custom Variable',
-			options: [
-				{
-					type: 'textinput',
-					label: `Channel (Range 1-${MAX_CHANNEL})`,
-					id: 'channel',
-					default: '1',
-					useVariables: true,
-				},
-				{
-					type: 'textinput',
-					label: `Value (Range 0-${MAX_VALUE})`,
-					id: 'value',
-					default: '0',
-					useVariables: true,
-				},
-				{
-					type: 'textinput',
-					label: `Fade time (ms)`,
-					id: 'duration',
-					default: '0',
-					useVariables: true,
-				},
-			],
-			callback: (action) => {
-				// Variables in these textinput fields are parsed by Companion before the callback is called
-				self.transitions.run(
-					Number(action.options.channel) - 1,
+					action.options.channel - 1,
 					toNumber(action.options.value),
 					toNumber(action.options.duration),
 				)
@@ -110,22 +86,16 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 					type: 'textinput',
 					label: `Channel (Range 1-${MAX_CHANNEL}), Value (Range 0-${MAX_VALUE});`,
 					tooltip:
-						'Each parameter should be separated by a colon (,) and each group of parameters should be separated by a semicolon (;)',
+						'Each parameter should be separated by a comma (,) and each group of parameters should be separated by a semicolon (;)',
 					id: 'params',
 					default: '1,0;',
 					useVariables: true,
 				},
-				{
-					type: 'textinput',
-					label: `Fade time (ms)`,
-					id: 'duration',
-					default: '0',
-					useVariables: true,
-				},
+				durationField,
 			],
 			callback: (action) => {
-				// Variables in these textinput fields are parsed by Companion before the callback is called
-				const params = String(action.options.params ?? '').replace(/;+$/, '') //remove any trailing ';' as they are not needed
+				// Variables in this textinput field are parsed by Companion before the callback is called
+				const params = String(action.options.params ?? '').replace(/;+\s*$/, '') //remove any trailing ';' as they are not needed
 				const duration = toNumber(action.options.duration)
 
 				const params_groups = params.split(';')
@@ -147,18 +117,44 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 				}
 			},
 		},
+		set_consecutive: {
+			name: 'Set Consecutive Values',
+			description: 'Set a run of channels, starting from the given channel. Useful for fixtures with multiple channels',
+			options: [
+				channelField('start', 'Start channel'),
+				{
+					type: 'textinput',
+					label: `Values (Range 0-${MAX_VALUE})`,
+					tooltip: 'Each value should be separated by a comma (,). The first value is set on the start channel',
+					description: 'eg 255,100,0 sets the start channel to 255, the next channel to 100 and the one after to 0',
+					id: 'values',
+					default: '0',
+					useVariables: true,
+				},
+				durationField,
+			],
+			callback: (action) => {
+				// Variables in this textinput field are parsed by Companion before the callback is called
+				const values = parseValueList(String(action.options.values ?? ''))
+				if (!values) {
+					self.log(
+						'error',
+						'One or more of your values are set incorrectly in the "Set Consecutive Values" action: ' +
+							action.options.values,
+					)
+					return
+				}
+
+				const start = action.options.start - 1
+				const duration = toNumber(action.options.duration)
+
+				values.forEach((value, i) => self.transitions.run(start + i, value, duration))
+			},
+		},
 		offset: {
 			name: 'Offset Value',
 			options: [
-				{
-					type: 'number',
-					label: `Channel (Range 1-${MAX_CHANNEL})`,
-					id: 'channel',
-					default: 1,
-					min: 1,
-					max: MAX_CHANNEL,
-					step: 1,
-				},
+				channelField('channel', 'Channel'),
 				{
 					type: 'number',
 					label: `Value change`,
@@ -167,52 +163,12 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 					min: -MAX_VALUE,
 					max: MAX_VALUE,
 					step: 1,
+					clampValues: true,
 				},
-				{
-					type: 'number',
-					label: `Fade time (ms)`,
-					id: 'duration',
-					default: 0,
-					min: 0,
-					max: Number.MAX_SAFE_INTEGER,
-					step: 1,
-				},
+				durationField,
 			],
 			callback: (action) => {
-				const channel = Number(action.options.channel) - 1
-				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(action.options.value))) // clamp to range
-
-				self.transitions.run(channel, isNaN(newval) ? 0 : newval, toNumber(action.options.duration))
-			},
-		},
-		offset_customvariable: {
-			name: 'Offset Value by Custom Variable',
-			options: [
-				{
-					type: 'textinput',
-					label: `Channel (Range 1-${MAX_CHANNEL})`,
-					id: 'channel',
-					default: '1',
-					useVariables: true,
-				},
-				{
-					type: 'textinput',
-					label: `Value change`,
-					id: 'value',
-					default: '1',
-					useVariables: true,
-				},
-				{
-					type: 'textinput',
-					label: `Fade time (ms)`,
-					id: 'duration',
-					default: '0',
-					useVariables: true,
-				},
-			],
-			callback: (action) => {
-				// Variables in these textinput fields are parsed by Companion before the callback is called
-				const channel = Number(action.options.channel) - 1
+				const channel = action.options.channel - 1
 				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(action.options.value))) // clamp to range
 
 				self.transitions.run(channel, isNaN(newval) ? 0 : newval, toNumber(action.options.duration))
