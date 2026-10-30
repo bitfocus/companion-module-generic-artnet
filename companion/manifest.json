@@ -1,4 +1,5 @@
 {
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
 	"id": "generic-artnet",
 	"name": "generic-artnet",
 	"shortname": "artnet",
@@ -18,7 +19,7 @@
 		"type": "node22",
 		"api": "nodejs-ipc",
 		"apiVersion": "0.0.0",
-		"entrypoint": "../lib/main.js"
+		"entrypoint": "../dist/main.js"
 	},
 	"manufacturer": "Generic",
 	"products": ["Art-Net"],

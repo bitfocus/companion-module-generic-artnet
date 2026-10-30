@@ -1,6 +1,14 @@
-const { MAX_CHANNEL, MAX_VALUE } = require('./constants')
+import type { CompanionActionDefinitions, InputValue } from '@companion-module/base'
+import type { ModuleInstance } from './main.js'
+import { MAX_CHANNEL, MAX_VALUE } from './constants.js'
 
-function getActionDefinitions(self) {
+/** Convert an option value to a number, falling back to 0 when it is not a valid number */
+function toNumber(value: InputValue | undefined): number {
+	const num = Number(value)
+	return isNaN(num) ? 0 : num
+}
+
+export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefinitions {
 	return {
 		set: {
 			name: 'Set Value',
@@ -29,13 +37,16 @@ function getActionDefinitions(self) {
 					id: 'duration',
 					default: 0,
 					min: 0,
+					max: Number.MAX_SAFE_INTEGER,
 					step: 1,
 				},
 			],
 			callback: (action) => {
-				const val = Number(action.options.value)
-				const duration = Number(action.options.duration)
-				self.transitions.run(action.options.channel - 1, isNaN(val) ? 0 : val, isNaN(duration) ? 0 : duration)
+				self.transitions.run(
+					Number(action.options.channel) - 1,
+					toNumber(action.options.value),
+					toNumber(action.options.duration),
+				)
 			},
 		},
 		set_customvariable: {
@@ -65,9 +76,11 @@ function getActionDefinitions(self) {
 			],
 			callback: (action) => {
 				// Variables in these textinput fields are parsed by Companion before the callback is called
-				const { channel, value: val, duration } = action.options
-
-				self.transitions.run(Number(channel) - 1, isNaN(val) ? 0 : Number(val), isNaN(duration) ? 0 : Number(duration))
+				self.transitions.run(
+					Number(action.options.channel) - 1,
+					toNumber(action.options.value),
+					toNumber(action.options.duration),
+				)
 			},
 		},
 		set_complex: {
@@ -92,32 +105,25 @@ function getActionDefinitions(self) {
 			],
 			callback: (action) => {
 				// Variables in these textinput fields are parsed by Companion before the callback is called
-				let params = String(action.options.params ?? '')
-				let duration = action.options.duration
+				const params = String(action.options.params ?? '').replace(/;+$/, '') //remove any trailing ';' as they are not needed
+				const duration = toNumber(action.options.duration)
 
-				params = params.replace(/;+$/, '') //remove any trailing ';' as they are not needed
+				const params_groups = params.split(';')
 
-				let params_groups = params.split(';')
-
-				for (let i = 0; i < params_groups.length; i++) {
-					if (params_groups[i].indexOf(',') === -1) {
+				for (const group of params_groups) {
+					if (group.indexOf(',') === -1) {
 						self.log(
 							'error',
-							'One or more of your parameters are set incorrectly in the "Set Complex Value" action: ' +
-								params_groups[i]
+							'One or more of your parameters are set incorrectly in the "Set Complex Value" action: ' + group,
 						)
 						return
 					}
 
-					let params_values = params_groups[i].split(',')
+					const params_values = group.split(',')
 
-					let channel = Number(params_values[0])
+					const channel = Number(params_values[0])
 
-					let val = Number(params_values[1])
-
-					duration = Number(duration)
-
-					self.transitions.run(channel - 1, isNaN(val) ? 0 : val, isNaN(duration) ? 0 : duration)
+					self.transitions.run(channel - 1, toNumber(params_values[1]), duration)
 				}
 			},
 		},
@@ -148,16 +154,15 @@ function getActionDefinitions(self) {
 					id: 'duration',
 					default: 0,
 					min: 0,
+					max: Number.MAX_SAFE_INTEGER,
 					step: 1,
 				},
 			],
 			callback: (action) => {
-				const channel = action.options.channel - 1
-				const val = Number(action.options.value)
-				const duration = Number(action.options.duration)
-				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + val)) // clamp to range
+				const channel = Number(action.options.channel) - 1
+				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(action.options.value))) // clamp to range
 
-				self.transitions.run(action.options.channel - 1, isNaN(newval) ? 0 : newval, isNaN(duration) ? 0 : duration)
+				self.transitions.run(channel, isNaN(newval) ? 0 : newval, toNumber(action.options.duration))
 			},
 		},
 		offset_customvariable: {
@@ -187,17 +192,11 @@ function getActionDefinitions(self) {
 			],
 			callback: (action) => {
 				// Variables in these textinput fields are parsed by Companion before the callback is called
-				const { value: val, duration } = action.options
 				const channel = Number(action.options.channel) - 1
+				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(action.options.value))) // clamp to range
 
-				let newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(val))) // clamp to range
-
-				self.transitions.run(channel, isNaN(newval) ? 0 : newval, isNaN(duration) ? 0 : Number(duration))
+				self.transitions.run(channel, isNaN(newval) ? 0 : newval, toNumber(action.options.duration))
 			},
 		},
 	}
-}
-
-module.exports = {
-	getActionDefinitions,
 }

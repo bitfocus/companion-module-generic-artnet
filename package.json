@@ -1,23 +1,49 @@
 {
 	"name": "generic-artnet",
 	"version": "2.0.1",
-	"main": "lib/main.js",
+	"main": "dist/main.js",
+	"type": "module",
 	"scripts": {
-		"package": "companion-module-build",
-		"test": "echo \"Error: no test specified\" && exit 1"
-	},
-	"engines": {
-		"node": "^22.20"
+		"postinstall": "husky",
+		"format": "prettier -w .",
+		"package": "run build && companion-module-build",
+		"build": "rimraf dist && run build:main",
+		"build:main": "tsc -p tsconfig.build.json",
+		"dev": "tsc -p tsconfig.build.json --watch",
+		"lint:raw": "eslint",
+		"lint": "run lint:raw ."
 	},
 	"license": "MIT",
-	"dependencies": {
-		"@companion-module/base": "~1.14.1"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-generic-artnet.git"
 	},
+	"engines": {
+		"node": "^22.20",
+		"yarn": "^4"
+	},
+	"dependencies": {
+		"@companion-module/base": "~1.14.1"
+	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.9.0"
-	}
+		"@companion-module/tools": "^2.9.0",
+		"@types/node": "^22.19.3",
+		"eslint": "^9.39.2",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
+		"prettier": "^3.7.4",
+		"rimraf": "^6.1.2",
+		"typescript": "~5.9.3",
+		"typescript-eslint": "^8.51.0"
+	},
+	"prettier": "@companion-module/tools/.prettierrc.json",
+	"lint-staged": {
+		"*.{css,json,md,scss}": [
+			"prettier --write"
+		],
+		"*.{ts,tsx,js,jsx}": [
+			"yarn lint:raw --fix"
+		]
+	},
+	"packageManager": "yarn@4.12.0"
 }
