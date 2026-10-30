@@ -1,6 +1,7 @@
 import type { CompanionActionDefinitions, CompanionInputFieldNumber } from '@companion-module/base'
 import type ModuleInstance from './main.js'
 import { MAX_CHANNEL, MAX_VALUE } from './constants.js'
+import { toDmxValue } from './artnet.js'
 
 export type ActionsSchema = {
 	set: { options: { channel: number; value: number; duration: number } }
@@ -169,7 +170,7 @@ export function GetActionDefinitions(self: ModuleInstance): CompanionActionDefin
 			],
 			callback: (action) => {
 				const channel = action.options.channel - 1
-				const newval = Math.min(MAX_VALUE, Math.max(0, self.data[channel] + Number(action.options.value))) // clamp to range
+				const newval = toDmxValue(self.data[channel] + Number(action.options.value)) // clamp to range
 
 				self.transitions.run(channel, isNaN(newval) ? 0 : newval, toNumber(action.options.duration))
 			},
