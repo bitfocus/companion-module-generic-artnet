@@ -10,7 +10,14 @@ The Receiver IP can be either:
 ### Actions
 
 - Set Value: Set a channel in the universe to the specified value
-- Set Value by Custom Variable: Set a channel in the universe to the specified value, by typing in custom variables
-- Set Complex Value: Set multiple channels in the universe to their specified values
-- Ofset Value: Offset a value by a set amount
-- Ofset Value by Custom Variable: Offset a value by a set amount, by typing in custom variables
+- Set Complex Value: Set multiple channels in the universe to their specified values, written as `channel,value;channel,value;`
+- Set Consecutive Values: Set a run of channels starting from a start channel, written as `value,value,value`. Useful for fixtures which use multiple channels, as only the start channel needs changing
+- Offset Value: Offset a value by a set amount
+
+Each action can fade to the new value, by setting a fade time.
+
+Any of the numeric fields can use variables and expressions, by switching the field to expression mode. Existing 'by Custom Variable' actions have been converted to the equivalent action using expressions.
+
+### Feedbacks
+
+- Channel Value: The value currently being sent for a channel. This can be stored into a local variable, to show the value on a button

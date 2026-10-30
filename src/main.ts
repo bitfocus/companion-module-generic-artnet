@@ -5,12 +5,13 @@ import { Transitions } from './transitions.js'
 import { MAX_CHANNEL, TIMER_SLOW_DEFAULT, TIMER_FAST_DEFAULT } from './constants.js'
 import { GetActionDefinitions, type ActionsSchema } from './actions.js'
 import { GetConfigFields, type ModuleConfig } from './config.js'
+import { GetFeedbackDefinitions, type FeedbacksSchema } from './feedbacks.js'
 
 export type ModuleSchema = {
 	config: ModuleConfig
 	secrets: undefined
 	actions: ActionsSchema
-	feedbacks: Record<string, never>
+	feedbacks: FeedbacksSchema
 	variables: Record<string, never>
 }
 
@@ -33,6 +34,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 		this.config = config
 
 		this.setActionDefinitions(GetActionDefinitions(this))
+		this.setFeedbackDefinitions(GetFeedbackDefinitions(this))
 
 		await this.configUpdated(config)
 	}
@@ -41,7 +43,11 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 		this.config = config
 
 		if (this.transitions) this.transitions.stopAll()
-		this.transitions = new Transitions(this.data, this.config.timer_fast || TIMER_FAST_DEFAULT, () => this.doSend())
+		this.transitions = new Transitions(this.data, this.config.timer_fast || TIMER_FAST_DEFAULT, () => {
+			// Values only change during a transition tick
+			this.doSend()
+			this.checkFeedbacks('channel_value')
+		})
 
 		// Close current client
 		if (this.#client !== undefined) {
